@@ -6,3 +6,4 @@ coverage/
 *.log
 npm-debug.log*
 .vite
+.history/
