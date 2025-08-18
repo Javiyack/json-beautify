@@ -5,39 +5,85 @@
     <title>json-beautify</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
-      body { margin:0; font-family: system-ui, sans-serif; background:#0F141A; color:#E6EDF3; }
-      .layout { display:flex; height:100vh; }
-      textarea { width:50%; padding:12px; font-family: ui-monospace, monospace; font-size:14px; resize:none; border:none; outline:none; background:#16202A; color:#E6EDF3; }
-      .right { display:flex; flex-direction:column; width:50%; }
-      .toolbar { padding:8px; background:#121A22; display:flex; gap:8px; align-items:center; }
-      .toolbar button { background:#1F2A33; color:#E6EDF3; border:1px solid #24323D; padding:6px 12px; cursor:pointer; border-radius:4px; }
-      .toolbar button:hover { background:#273643; }
-      pre { flex:1; margin:0; overflow:auto; background:#16202A; padding:12px; font-size:14px; }
-      .status { font-size:12px; opacity:0.75; }
-      .error { color:#FF5370; }
-  /* Highlight theme */
-  .color-key { color:#4FC1FF; }
-  .color-string { color:#A5D6FF; }
-  .color-number { color:#F78C6C; }
-  .color-boolean { color:#C792EA; }
-  .color-null { color:#C792EA; font-style:italic; }
-  .color-brace { color:#89DDFF; }
-  .color-punct { color:#89DDFF; }
-  .color-other { color:#E6EDF3; }
-      @media (max-width:900px) { .layout { flex-direction:column; } textarea, .right { width:100%; height:50%; } }
+      :root {
+        --bg: #070b12;
+        --grid-line: rgba(255,255,255,0.04);
+        --gradient-accent: linear-gradient(135deg,#ff6a3d 0%,#ff2ecd 35%,#5f4bff 70%,#2dd4ff 100%);
+        --panel: rgba(20,26,40,0.85);
+        --panel-border: #273347;
+        --panel-alt: rgba(15,19,30,0.75);
+        --panel-blur: blur(12px) saturate(140%);
+        --text: #f2f7ff;
+        --muted: #9aa6bd;
+        --error: #ff5370;
+        --focus: #5f4bff;
+        /* Token colors (refined) */
+        --c-key: #46c6ff;
+        --c-string: #ff7ac6;
+        --c-number: #ffd166;
+        --c-boolean: #b794ff;
+        --c-null: #b794ff;
+        --c-brace: #7dd3fc;
+        --c-punct: #7dd3fc;
+      }
+      body { margin:0; font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; position:relative; }
+      body:before { content:""; position:fixed; inset:0; background:
+        linear-gradient(var(--bg), var(--bg)),
+        repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 40px),
+        repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 40px); background-blend-mode:overlay; pointer-events:none; }
+      .app-shell { display:flex; flex-direction:column; height:100vh; }
+      .header { display:flex; align-items:center; gap:14px; padding:14px 22px; position:relative; z-index:2; }
+      .brand { font-size:18px; font-weight:600; letter-spacing:.5px; background:var(--gradient-accent); -webkit-background-clip:text; color:transparent; filter:drop-shadow(0 2px 6px rgba(255,106,61,0.35)); }
+      .layout { flex:1; display:flex; min-height:0; }
+      textarea { width:50%; padding:18px 18px 18px 22px; font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13.5px; line-height:1.5; resize:none; border:1px solid var(--panel-border); outline:none; background:var(--panel); backdrop-filter:var(--panel-blur); color:var(--text); border-right:none; position:relative; }
+      textarea:focus { border-color:var(--focus); box-shadow:0 0 0 1px var(--focus), 0 0 0 3px rgba(95,75,255,0.25); z-index:1; }
+      .right { display:flex; flex-direction:column; width:50%; position:relative; }
+      .toolbar { padding:10px 16px; background:var(--panel-alt); backdrop-filter:var(--panel-blur); display:flex; gap:12px; align-items:center; border:1px solid var(--panel-border); border-left:none; border-bottom:none; }
+      .toolbar button { background:var(--panel-alt); color:var(--text); border:1px solid var(--panel-border); padding:8px 16px; cursor:pointer; border-radius:20px; font-size:12.5px; letter-spacing:.4px; position:relative; overflow:hidden; transition:.3s; }
+      .toolbar button:before { content:""; position:absolute; inset:0; background:var(--gradient-accent); opacity:0; transition:.35s; }
+      .toolbar button span { position:relative; z-index:1; }
+      .toolbar button:hover:before { opacity:0.12; }
+      .toolbar button:hover { border-color:#3e4c63; }
+      .toolbar button:active { transform:translateY(1px); }
+      pre { flex:1; margin:0; overflow:auto; background:var(--panel); backdrop-filter:var(--panel-blur); padding:18px 22px; font-size:13.5px; line-height:1.5; border:1px solid var(--panel-border); border-left:none; }
+      pre code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight:450; }
+      pre::-webkit-scrollbar { width:10px; }
+      pre::-webkit-scrollbar-track { background:transparent; }
+      pre::-webkit-scrollbar-thumb { background:#2c3b55; border-radius:6px; }
+      pre::-webkit-scrollbar-thumb:hover { background:#39516f; }
+      .status { font-size:11.5px; font-family:'JetBrains Mono', ui-monospace; color:var(--muted); display:flex; gap:8px; }
+      .error { color:var(--error); text-shadow:0 0 4px rgba(255,83,112,0.35); }
+      /* Tokens */
+      .color-key { color:var(--c-key); font-weight:500; }
+      .color-string { color:var(--c-string); }
+      .color-number { color:var(--c-number); }
+      .color-boolean { color:var(--c-boolean); font-style:italic; }
+      .color-null { color:var(--c-null); font-style:italic; }
+      .color-brace { color:var(--c-brace); }
+      .color-punct { color:var(--c-punct); opacity:.85; }
+      .color-other { color:var(--text); }
+      .footer { font-size:11px; color:var(--muted); padding:6px 14px; text-align:right; background:transparent; }
+      .footer a { color:var(--c-key); text-decoration:none; }
+      .footer a:hover { text-decoration:underline; }
+      ::selection { background:#5f4bff; color:#fff; }
+      @media (max-width:900px) { .layout { flex-direction:column; } textarea, .right { width:100%; height:50%; } pre { border-left:1px solid var(--panel-border); border-top:none; } }
     </style>
   </head>
   <body>
-    <div class="layout">
+    <div class="app-shell">
+      <div class="header"><div class="brand">json‑beautify</div></div>
+      <div class="layout">
       <textarea id="input" placeholder="Pega JSON aquí..."></textarea>
       <div class="right">
         <div class="toolbar">
-          <button id="formatBtn">Formatear</button>
-          <button id="minifyBtn">Minificar</button>
+          <button id="formatBtn"><span>Formatear</span></button>
+          <button id="minifyBtn"><span>Minificar</span></button>
           <span id="status" class="status"></span>
         </div>
         <pre id="output" aria-label="Salida JSON"></pre>
       </div>
+      </div>
+      <div class="footer">Sprint 2 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
