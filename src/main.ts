@@ -1,5 +1,6 @@
 import { parseJson } from './core/parse.js';
 import { pretty, minify } from './core/stringify.js';
+import { highlightJson } from './highlight/highlight.js';
 
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLPreElement;
@@ -22,7 +23,7 @@ function formatCurrent() {
   }
   if (result.data !== undefined) {
     const formatted = pretty(result.data, { indent: 2 });
-    outputEl.textContent = formatted;
+  outputEl.innerHTML = highlightJson(formatted);
     updateStatus(`Válido | profundidad: ${result.metrics.depth} | tamaño: ${result.metrics.sizeBytes} bytes | parse: ${result.metrics.parseTimeMs.toFixed(1)}ms`);
   }
 }
@@ -37,7 +38,7 @@ function minifyCurrent() {
   }
   if (result.data !== undefined) {
     const compact = minify(result.data);
-    outputEl.textContent = compact;
+  outputEl.innerHTML = highlightJson(compact);
     updateStatus(`Válido (min) | tamaño: ${compact.length} chars`);
   }
 }
@@ -51,7 +52,7 @@ inputEl.addEventListener('input', () => {
   window.clearTimeout(timer);
   timer = window.setTimeout(() => {
     if (!inputEl.value.trim()) {
-      outputEl.textContent = '';
+  outputEl.textContent = '';
       updateStatus('');
       return;
     }
