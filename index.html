@@ -33,7 +33,7 @@
         repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 40px); background-blend-mode:overlay; pointer-events:none; }
       .app-shell { display:flex; flex-direction:column; height:100vh; }
       .header { display:flex; align-items:center; gap:14px; padding:14px 22px; position:relative; z-index:2; }
-      .brand { font-size:18px; font-weight:600; letter-spacing:.5px; background:var(--gradient-accent); -webkit-background-clip:text; color:transparent; filter:drop-shadow(0 2px 6px rgba(255,106,61,0.35)); }
+  .brand { font-size:18px; font-weight:600; letter-spacing:.5px; background:var(--gradient-accent); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 6px rgba(255,106,61,0.35)); }
       .layout { flex:1; display:flex; min-height:0; }
       textarea { width:50%; padding:18px 18px 18px 22px; font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13.5px; line-height:1.5; resize:none; border:1px solid var(--panel-border); outline:none; background:var(--panel); backdrop-filter:var(--panel-blur); color:var(--text); border-right:none; position:relative; }
       textarea:focus { border-color:var(--focus); box-shadow:0 0 0 1px var(--focus), 0 0 0 3px rgba(95,75,255,0.25); z-index:1; }
@@ -62,6 +62,21 @@
       .color-brace { color:var(--c-brace); }
       .color-punct { color:var(--c-punct); opacity:.85; }
       .color-other { color:var(--text); }
+  .view-tabs { display:flex; gap:6px; padding:6px 16px 4px; background:var(--panel-alt); border:1px solid var(--panel-border); border-left:none; border-top:none; }
+  .vt-btn { background:transparent; border:1px solid var(--panel-border); color:var(--muted); padding:4px 12px; font-size:11px; letter-spacing:.5px; cursor:pointer; border-radius:14px; transition:.25s; }
+  .vt-btn.active { color:var(--text); background:#1e2636; border-color:#364152; }
+  .vt-btn:hover { color:var(--text); }
+  .tree-view { font-family:'JetBrains Mono', ui-monospace, monospace; padding:10px 16px; background:var(--panel); border:1px solid var(--panel-border); border-top:none; height:100%; overflow:auto; }
+  .tw-line { white-space:nowrap; font-size:13px; line-height:1.4; }
+  .tw-line .tw-key { color:var(--c-key); font-weight:500; }
+  .tw-meta { color:var(--muted); }
+  .tw-string { color:var(--c-string); }
+  .tw-number { color:var(--c-number); }
+  .tw-boolean { color:var(--c-boolean); }
+  .tw-null { color:var(--c-null); font-style:italic; }
+  .tw-toggle { display:inline-block; width:1.1em; cursor:pointer; color:var(--c-brace); }
+  .tw-spacer { display:inline-block; width:1.1em; }
+  .view-tree[hidden] { display:none !important; }
       .footer { font-size:11px; color:var(--muted); padding:6px 14px; text-align:right; background:transparent; }
       .footer a { color:var(--c-key); text-decoration:none; }
       .footer a:hover { text-decoration:underline; }
@@ -72,15 +87,20 @@
   <body>
     <div class="app-shell">
       <div class="header"><div class="brand">json‑beautify</div></div>
-      <div class="layout">
-      <textarea id="input" placeholder="Pega JSON aquí..."></textarea>
-      <div class="right">
+  <div class="layout">
+  <textarea id="input" placeholder="Pega JSON aquí..."></textarea>
+  <div class="right">
         <div class="toolbar">
           <button id="formatBtn"><span>Formatear</span></button>
           <button id="minifyBtn"><span>Minificar</span></button>
           <span id="status" class="status"></span>
         </div>
-        <pre id="output" aria-label="Salida JSON"></pre>
+        <div class="view-tabs">
+          <button class="vt-btn active" data-view="text">Texto</button>
+          <button class="vt-btn" data-view="tree">Árbol</button>
+        </div>
+        <pre id="output" aria-label="Salida JSON" class="view-text"></pre>
+        <div id="tree" class="view-tree" hidden></div>
       </div>
       </div>
       <div class="footer">Sprint 2 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>
