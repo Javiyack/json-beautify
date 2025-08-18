@@ -5,7 +5,7 @@
     <title>json-beautify</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
-      :root {
+  :root {
         --bg: #070b12;
         --grid-line: rgba(255,255,255,0.04);
         --gradient-accent: linear-gradient(135deg,#ff6a3d 0%,#ff2ecd 35%,#5f4bff 70%,#2dd4ff 100%);
@@ -26,20 +26,40 @@
         --c-brace: #7dd3fc;
         --c-punct: #7dd3fc;
       }
-      body { margin:0; font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; position:relative; }
+      :root[data-theme='light'] {
+        --bg:#f5f7fb;
+        --grid-line:rgba(0,0,0,0.06);
+        --panel: rgba(255,255,255,0.85);
+        --panel-alt: rgba(250,252,255,0.75);
+        --panel-border:#d1d9e4;
+        --panel-blur:blur(8px) saturate(160%);
+        --text:#1d2430;
+        --muted:#5a6475;
+        --c-key:#006d92;
+        --c-string:#b60060;
+        --c-number:#8b5d00;
+        --c-boolean:#5a2d91;
+        --c-null:#5a2d91;
+        --c-brace:#004c66;
+        --c-punct:#004c66;
+        --focus:#674bff;
+      }
+      body { margin:0; font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; position:relative; transition:background .4s, color .4s; }
       body:before { content:""; position:fixed; inset:0; background:
         linear-gradient(var(--bg), var(--bg)),
         repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 40px),
         repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 40px); background-blend-mode:overlay; pointer-events:none; }
       .app-shell { display:flex; flex-direction:column; height:100vh; }
-      .header { display:flex; align-items:center; gap:14px; padding:14px 22px; position:relative; z-index:2; }
+  .header { display:flex; align-items:center; gap:18px; padding:14px 22px; position:relative; z-index:2; }
   .brand { font-size:18px; font-weight:600; letter-spacing:.5px; background:var(--gradient-accent); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 6px rgba(255,106,61,0.35)); }
+  .theme-toggle { margin-left:auto; background:var(--panel-alt); border:1px solid var(--panel-border); padding:6px 14px; border-radius:20px; cursor:pointer; font-size:12px; color:var(--muted); transition:.25s; }
+  .theme-toggle:hover { color:var(--text); }
       .layout { flex:1; display:flex; min-height:0; }
       textarea { width:50%; padding:18px 18px 18px 22px; font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13.5px; line-height:1.5; resize:none; border:1px solid var(--panel-border); outline:none; background:var(--panel); backdrop-filter:var(--panel-blur); color:var(--text); border-right:none; position:relative; }
       textarea:focus { border-color:var(--focus); box-shadow:0 0 0 1px var(--focus), 0 0 0 3px rgba(95,75,255,0.25); z-index:1; }
       .right { display:flex; flex-direction:column; width:50%; position:relative; }
-      .toolbar { padding:10px 16px; background:var(--panel-alt); backdrop-filter:var(--panel-blur); display:flex; gap:12px; align-items:center; border:1px solid var(--panel-border); border-left:none; border-bottom:none; }
-      .toolbar button { background:var(--panel-alt); color:var(--text); border:1px solid var(--panel-border); padding:8px 16px; cursor:pointer; border-radius:20px; font-size:12.5px; letter-spacing:.4px; position:relative; overflow:hidden; transition:.3s; }
+  .toolbar { padding:8px 16px; background:var(--panel-alt); backdrop-filter:var(--panel-blur); display:flex; gap:10px; align-items:center; border:1px solid var(--panel-border); border-left:none; border-bottom:none; flex-wrap:wrap; }
+  .toolbar button { background:var(--panel-alt); color:var(--text); border:1px solid var(--panel-border); padding:6px 14px; cursor:pointer; border-radius:18px; font-size:12px; letter-spacing:.4px; position:relative; overflow:hidden; transition:.3s; }
       .toolbar button:before { content:""; position:absolute; inset:0; background:var(--gradient-accent); opacity:0; transition:.35s; }
       .toolbar button span { position:relative; z-index:1; }
       .toolbar button:hover:before { opacity:0.12; }
@@ -52,6 +72,15 @@
       pre::-webkit-scrollbar-thumb { background:#2c3b55; border-radius:6px; }
       pre::-webkit-scrollbar-thumb:hover { background:#39516f; }
       .status { font-size:11.5px; font-family:'JetBrains Mono', ui-monospace; color:var(--muted); display:flex; gap:8px; }
+  .field { position:relative; }
+  .search-input { background:var(--panel); border:1px solid var(--panel-border); border-radius:14px; padding:6px 10px 6px 28px; font-size:12px; font-family:inherit; color:var(--text); width:150px; transition:.25s; }
+  .search-input:focus { outline:none; border-color:var(--focus); }
+  .search-icon { position:absolute; top:50%; left:8px; transform:translateY(-50%); font-size:12px; opacity:.6; }
+  .history-select { background:var(--panel); color:var(--text); border:1px solid var(--panel-border); border-radius:14px; padding:6px 10px; font-size:12px; }
+  .history-select:focus { outline:none; border-color:var(--focus); }
+  .highlight-match { background:rgba(255,234,0,0.25); box-shadow:0 0 0 1px rgba(255,234,0,0.4); border-radius:2px; }
+  .drag-overlay { position:fixed; inset:0; background:rgba(95,75,255,0.15); backdrop-filter:blur(4px); border:3px dashed var(--focus); display:flex; align-items:center; justify-content:center; font-size:22px; letter-spacing:1px; color:var(--focus); z-index:20; pointer-events:none; opacity:0; transition:.3s; }
+  .drag-overlay.active { opacity:1; }
       .error { color:var(--error); text-shadow:0 0 4px rgba(255,83,112,0.35); }
       /* Tokens */
       .color-key { color:var(--c-key); font-weight:500; }
@@ -86,13 +115,22 @@
   </head>
   <body>
     <div class="app-shell">
-      <div class="header"><div class="brand">json‑beautify</div></div>
+  <div class="header"><div class="brand">json‑beautify</div><button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">Tema</button></div>
   <div class="layout">
   <textarea id="input" placeholder="Pega JSON aquí..."></textarea>
   <div class="right">
         <div class="toolbar">
           <button id="formatBtn"><span>Formatear</span></button>
           <button id="minifyBtn"><span>Minificar</span></button>
+          <button id="copyPrettyBtn" title="Copiar formateado"><span>Copiar Pretty</span></button>
+            <button id="copyMinBtn" title="Copiar minificado"><span>Copiar Min</span></button>
+          <button id="exportBtn" title="Exportar JSON"><span>Exportar</span></button>
+          <label class="field" title="Buscar"><span class="search-icon">🔍</span><input id="searchInput" class="search-input" placeholder="Buscar" /></label>
+          <select id="historySelect" class="history-select" aria-label="Historial">
+            <option value="">Historial</option>
+          </select>
+          <input type="file" id="fileInput" accept="application/json,.json" hidden />
+          <button id="loadFileBtn"><span>Cargar Archivo</span></button>
           <span id="status" class="status"></span>
         </div>
         <div class="view-tabs">
@@ -103,8 +141,9 @@
         <div id="tree" class="view-tree" hidden></div>
       </div>
       </div>
-      <div class="footer">Sprint 2 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>
+      <div class="footer">Sprint 4 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>
     </div>
+    <div id="dragOverlay" class="drag-overlay">Suelta el archivo .json</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

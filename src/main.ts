@@ -10,11 +10,23 @@ const outputEl = document.getElementById('output') as HTMLPreElement;
 const statusEl = document.getElementById('status') as HTMLSpanElement;
 const formatBtn = document.getElementById('formatBtn') as HTMLButtonElement;
 const minifyBtn = document.getElementById('minifyBtn') as HTMLButtonElement;
+const copyPrettyBtn = document.getElementById('copyPrettyBtn') as HTMLButtonElement | null;
+const copyMinBtn = document.getElementById('copyMinBtn') as HTMLButtonElement | null;
+const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement | null;
+const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
+const historySelect = document.getElementById('historySelect') as HTMLSelectElement | null;
+const fileInput = document.getElementById('fileInput') as HTMLInputElement | null;
+const loadFileBtn = document.getElementById('loadFileBtn') as HTMLButtonElement | null;
+const themeToggle = document.getElementById('themeToggle') as HTMLButtonElement | null;
 const treeEl = document.getElementById('tree') as HTMLDivElement;
 const tabButtons = Array.from(document.querySelectorAll('.vt-btn')) as HTMLButtonElement[];
+const dragOverlay = document.getElementById('dragOverlay') as HTMLDivElement | null;
 
 const collapse = new CollapseState();
 let lastData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+const HISTORY_KEY = 'jb_history_v1';
+const THEME_KEY = 'jb_theme';
+const MAX_HISTORY = 5;
 
 function updateStatus(text: string, isError = false) {
   statusEl.textContent = text;
@@ -34,6 +46,7 @@ function formatCurrent() {
   const formatted = pretty(lastData, { indent: 2 });
   outputEl.innerHTML = highlightJson(formatted);
   renderCurrentTree();
+  storeHistory(raw);
     updateStatus(`Válido | profundidad: ${result.metrics.depth} | tamaño: ${result.metrics.sizeBytes} bytes | parse: ${result.metrics.parseTimeMs.toFixed(1)}ms`);
   }
 }
@@ -51,6 +64,7 @@ function minifyCurrent() {
   const compact = minify(lastData);
   outputEl.innerHTML = highlightJson(compact);
   renderCurrentTree();
+  storeHistory(raw);
     updateStatus(`Válido (min) | tamaño: ${compact.length} chars`);
   }
 }
@@ -113,3 +127,104 @@ tabButtons.forEach(btn => {
     }
   });
 });
+
+// --- Sprint 4 features ---
+function safe<T>(el: T | null): el is T { return !!el; }
+
+function storeHistory(text: string) {
+  if (!safe(localStorage)) return;
+  try {
+    const arr: string[] = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if (!text.trim()) return;
+    arr.unshift(text);
+    const dedup = Array.from(new Set(arr)).slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(dedup));
+    refreshHistoryOptions();
+  } catch {/* ignore */}
+}
+
+function refreshHistoryOptions() {
+  if (!historySelect) return;
+  try {
+    const arr: string[] = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    historySelect.innerHTML = '<option value="">Historial</option>' + arr.map((_,i)=>`<option value="${i}">Item ${i+1}</option>`).join('');
+  } catch {/* ignore */}
+}
+
+historySelect?.addEventListener('change', () => {
+  try {
+    const arr: string[] = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const idx = Number(historySelect.value);
+    if (!isNaN(idx) && arr[idx]) {
+      inputEl.value = arr[idx];
+      formatCurrent();
+    }
+  } catch {/* ignore */}
+});
+
+copyPrettyBtn?.addEventListener('click', () => {
+  if (lastData === undefined) return;
+  navigator.clipboard.writeText(pretty(lastData, { indent: 2 }));
+  updateStatus('Copiado (pretty)');
+});
+
+copyMinBtn?.addEventListener('click', () => {
+  if (lastData === undefined) return;
+  navigator.clipboard.writeText(minify(lastData));
+  updateStatus('Copiado (min)');
+});
+
+exportBtn?.addEventListener('click', () => {
+  const content = inputEl.value;
+  if (!content.trim()) return;
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+loadFileBtn?.addEventListener('click', () => fileInput?.click());
+fileInput?.addEventListener('change', () => {
+  const file = fileInput.files?.[0];
+  if (!file) return;
+  file.text().then(t => { inputEl.value = t; formatCurrent(); });
+});
+
+['dragenter','dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); dragOverlay?.classList.add('active'); }));
+['dragleave','drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev==='drop') handleDrop(e as DragEvent); dragOverlay?.classList.remove('active'); }));
+function handleDrop(e: DragEvent) {
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  if (!file.name.endsWith('.json')) { updateStatus('Archivo no es .json', true); return; }
+  file.text().then(t => { inputEl.value = t; formatCurrent(); });
+}
+
+searchInput?.addEventListener('input', () => {
+  if (lastData === undefined) return;
+  const q = searchInput.value.trim();
+  const formatted = pretty(lastData, { indent: 2 });
+  if (!q) { outputEl.innerHTML = highlightJson(formatted); return; }
+  const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, r => `\\${r}`);
+  const regex = new RegExp(safeQ, 'gi');
+  const marked = formatted.replace(regex, m => `__MARK__${m}__ENDMARK__`);
+  let html = highlightJson(marked);
+  html = html.replace(/__MARK__(.*?)__ENDMARK__/g, (_,p)=>`<mark class="highlight-match">${p}</mark>`);
+  outputEl.innerHTML = html;
+});
+
+function applyTheme(theme: string) {
+  document.documentElement.setAttribute('data-theme', theme);
+  try { localStorage.setItem(THEME_KEY, theme); } catch {/* ignore */}
+}
+themeToggle?.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(current);
+});
+try {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme) applyTheme(savedTheme);
+} catch {/* ignore */}
+refreshHistoryOptions();
