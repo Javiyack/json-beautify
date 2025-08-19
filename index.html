@@ -17,15 +17,28 @@
         --muted: #9aa6bd;
         --error: #ff5370;
         --focus: #5f4bff;
-        /* Token colors (refined) */
-  /* New vivid palette: cyan, magenta, orange, purple, light green */
-  --c-key: #28e4ff;      /* cyan */
-  --c-string: #ff4fbf;   /* magenta */
-  --c-number: #ffb347;   /* orange */
-  --c-boolean: #b38bff;  /* purple */
-  --c-null: #b38bff;     /* purple */
-  --c-brace: #9aff6a;    /* light green */
-  --c-punct: #9aff6a;    /* light green */
+  /* Token colors (new requested pastel set) */
+  /* Provided set: #f6ddff,#f8ffd1,#dcdeff,#fbecff,#ecffe6 (we map per earlier request override) */
+  --c-key: #f6ddff;      /* key */
+  --c-string: #f8ffd1;   /* string */
+  --c-number: #dcdeff;   /* number */
+  --c-boolean: #fbecff;  /* boolean */
+  --c-null: #ecffe6;     /* null */
+  --c-brace: #dcdeff;    /* structure */
+  --c-punct: #dcdeff;    /* punctuation */
+  --token-glow-key: none;
+  --token-glow-string: none;
+  --token-glow-number: none;
+  --token-glow-boolean: none;
+  --token-glow-brace: none;
+    /* Token colors (palette: #00b2b6,#06ffe0,#e3ff7a,#ffafcb,#ffd3d3) */
+    --c-key: #49abd8;      /* keys teal */
+    --c-string: #54b590;   /* strings aqua */
+    --c-number: #c29a49;   /* numbers lime-yellow */
+    --c-boolean: #a567d2;  /* booleans pink */
+    --c-null: #db8994;     /* null pale pink */
+    --c-brace: #ffffff;    /* structure reuse teal */
+    --c-punct: #ffffff;    /* punctuation */
       }
       :root[data-theme='light'] {
         --bg:#f5f7fb;
@@ -36,14 +49,27 @@
         --panel-blur:blur(8px) saturate(160%);
         --text:#1d2430;
         --muted:#5a6475;
-  /* Adjusted for light theme accessibility */
-  --c-key:#007e99;       /* cyan deeper */
-  --c-string:#a3006e;    /* magenta deeper */
-  --c-number:#a45300;    /* orange deeper */
-  --c-boolean:#5a2d91;   /* purple */
-  --c-null:#5a2d91;      /* purple */
-  --c-brace:#3a7f00;     /* green darker */
-  --c-punct:#3a7f00;     /* green darker */
+  /* Light variant (deeper tones for contrast) */
+  --c-key:#caaed2;
+  --c-string:#c9d58a;
+  --c-number:#9aa2cc;
+  --c-boolean:#c9b0cc;
+  --c-null:#a9d4b0;
+  --c-brace:#9aa2cc;
+  --c-punct:#9aa2cc;
+    /* Light variant (slightly darkened for contrast) */
+    --c-key:#008b8e;
+    --c-string:#00cbb3;
+    --c-number:#b9d85c;
+    --c-boolean:#d07fa3;
+    --c-null:#e6bcbc;
+    --c-brace:#008b8e;
+    --c-punct:#008b8e;
+  --token-glow-key: none;
+  --token-glow-string: none;
+  --token-glow-number: none;
+  --token-glow-boolean: none;
+  --token-glow-brace: none;
         --focus:#674bff;
       }
       body { margin:0; font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; position:relative; transition:background .4s, color .4s; }
@@ -85,13 +111,13 @@
   .drag-overlay.active { opacity:1; }
       .error { color:var(--error); text-shadow:0 0 4px rgba(255,83,112,0.35); }
       /* Tokens */
-      .color-key { color:var(--c-key); font-weight:500; }
-      .color-string { color:var(--c-string); }
-      .color-number { color:var(--c-number); }
-      .color-boolean { color:var(--c-boolean); font-style:italic; }
-      .color-null { color:var(--c-null); font-style:italic; }
-      .color-brace { color:var(--c-brace); }
-      .color-punct { color:var(--c-punct); opacity:.85; }
+  .color-key { color:var(--c-key); font-weight:500; }
+  .color-string { color:var(--c-string); }
+  .color-number { color:var(--c-number); }
+  .color-boolean { color:var(--c-boolean); font-style:italic; }
+  .color-null { color:var(--c-null); font-style:italic; }
+  .color-brace { color:var(--c-brace); }
+  .color-punct { color:var(--c-punct); opacity:.85; }
       .color-other { color:var(--text); }
   .view-tabs { display:flex; gap:6px; padding:6px 16px 4px; background:var(--panel-alt); border:1px solid var(--panel-border); border-left:none; border-top:none; }
   .vt-btn { background:transparent; border:1px solid var(--panel-border); color:var(--muted); padding:4px 12px; font-size:11px; letter-spacing:.5px; cursor:pointer; border-radius:14px; transition:.25s; }
