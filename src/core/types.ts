@@ -9,6 +9,7 @@ export interface ParseError {
   line: number;
   column: number;
   snippet?: string;
+  suggestion?: string;
 }
 
 export interface ParseResult {

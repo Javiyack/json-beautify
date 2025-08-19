@@ -23,6 +23,7 @@ const tabButtons = Array.from(document.querySelectorAll('.vt-btn')) as HTMLButto
 const dragOverlay = document.getElementById('dragOverlay') as HTMLDivElement | null;
 
 const collapse = new CollapseState();
+const COLLAPSE_KEY = 'jb_collapse_v1';
 let lastData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const HISTORY_KEY = 'jb_history_v1';
 const THEME_KEY = 'jb_theme';
@@ -40,7 +41,8 @@ function formatCurrent() {
   const raw = inputEl.value;
   parseSmart(raw, (result) => {
     if (result.error) {
-      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
+  const sug = result.error.suggestion ? ` Sugerencia: ${result.error.suggestion}` : '';
+  updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}${sug}`, true);
       outputEl.textContent = '';
       return;
     }
@@ -59,7 +61,8 @@ function minifyCurrent() {
   const raw = inputEl.value;
   parseSmart(raw, (result) => {
     if (result.error) {
-      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
+  const sug = result.error.suggestion ? ` Sugerencia: ${result.error.suggestion}` : '';
+  updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}${sug}`, true);
       outputEl.textContent = '';
       return;
     }
@@ -90,7 +93,8 @@ inputEl.addEventListener('input', () => {
     }
     const result = parseJson(inputEl.value);
     if (result.error) {
-      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}`, true);
+      const sug = (result as any).error.suggestion ? ` Sugerencia: ${(result as any).error.suggestion}` : '';
+      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}${sug}`, true);
     } else {
       updateStatus('JSON potencialmente válido');
     }
@@ -115,6 +119,7 @@ treeEl.addEventListener('click', (e) => {
     if (path) {
       collapse.toggle(path);
       renderCurrentTree();
+  try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(Array.from((collapse as any).set || []))); } catch {/* ignore */}
     }
   }
 });
@@ -232,6 +237,13 @@ themeToggle?.addEventListener('click', () => {
 try {
   const savedTheme = localStorage.getItem(THEME_KEY);
   if (savedTheme) applyTheme(savedTheme);
+  const savedCollapse = localStorage.getItem(COLLAPSE_KEY);
+  if (savedCollapse) {
+    try {
+      const arr: string[] = JSON.parse(savedCollapse);
+      arr.forEach(p => (collapse as any).set.add(p));
+    } catch {/* ignore */}
+  }
 } catch {/* ignore */}
 refreshHistoryOptions();
 
@@ -254,7 +266,7 @@ function ensureWorker() {
   }
 }
 
-interface SmartParseResult { data?: any; metrics: { parseTimeMs:number; depth:number; sizeBytes:number }; error?: { message:string; line:number; column:number; snippet?:string }; } // eslint-disable-line @typescript-eslint/no-explicit-any
+interface SmartParseResult { data?: any; metrics: { parseTimeMs:number; depth:number; sizeBytes:number }; error?: { message:string; line:number; column:number; snippet?:string; suggestion?: string }; } // eslint-disable-line @typescript-eslint/no-explicit-any
 let parseCallback: ((r: SmartParseResult) => void) | null = null;
 function parseSmart(text: string, cb: (r: SmartParseResult) => void) {
   // Decidir si usar worker por tamaño (bytes ~ length utf-16 aproxima)
@@ -265,7 +277,7 @@ function parseSmart(text: string, cb: (r: SmartParseResult) => void) {
     updateStatus('Parse (worker)…');
     worker!.postMessage({ id: pendingParseId, json: text });
   } else {
-    const result = parseJson(text);
+  const result = parseJson(text, { tolerant: true });
     cb(result as any); // compatible contrato
   }
 }
