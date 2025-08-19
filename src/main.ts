@@ -27,6 +27,9 @@ let lastData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const HISTORY_KEY = 'jb_history_v1';
 const THEME_KEY = 'jb_theme';
 const MAX_HISTORY = 5;
+let worker: Worker | null = null;
+let pendingParseId: string | null = null;
+const WORKER_THRESHOLD = 1_000_000; // bytes aproximados (~1MB)
 
 function updateStatus(text: string, isError = false) {
   statusEl.textContent = text;
@@ -35,38 +38,40 @@ function updateStatus(text: string, isError = false) {
 
 function formatCurrent() {
   const raw = inputEl.value;
-  const result = parseJson(raw);
-  if (result.error) {
-    updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
-    outputEl.textContent = '';
-    return;
-  }
-  if (result.data !== undefined) {
-  lastData = result.data;
-  const formatted = pretty(lastData, { indent: 2 });
-  outputEl.innerHTML = highlightJson(formatted);
-  renderCurrentTree();
-  storeHistory(raw);
-    updateStatus(`Válido | profundidad: ${result.metrics.depth} | tamaño: ${result.metrics.sizeBytes} bytes | parse: ${result.metrics.parseTimeMs.toFixed(1)}ms`);
-  }
+  parseSmart(raw, (result) => {
+    if (result.error) {
+      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
+      outputEl.textContent = '';
+      return;
+    }
+    if (result.data !== undefined) {
+      lastData = result.data;
+      const formatted = pretty(lastData, { indent: 2 });
+      outputEl.innerHTML = highlightJson(formatted);
+      renderCurrentTree();
+      storeHistory(raw);
+      updateStatus(`Válido | profundidad: ${result.metrics.depth} | tamaño: ${result.metrics.sizeBytes} bytes | parse: ${result.metrics.parseTimeMs.toFixed(1)}ms`);
+    }
+  });
 }
 
 function minifyCurrent() {
   const raw = inputEl.value;
-  const result = parseJson(raw);
-  if (result.error) {
-    updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
-    outputEl.textContent = '';
-    return;
-  }
-  if (result.data !== undefined) {
-  lastData = result.data;
-  const compact = minify(lastData);
-  outputEl.innerHTML = highlightJson(compact);
-  renderCurrentTree();
-  storeHistory(raw);
-    updateStatus(`Válido (min) | tamaño: ${compact.length} chars`);
-  }
+  parseSmart(raw, (result) => {
+    if (result.error) {
+      updateStatus(`Error línea ${result.error.line}, col ${result.error.column}: ${result.error.message}`, true);
+      outputEl.textContent = '';
+      return;
+    }
+    if (result.data !== undefined) {
+      lastData = result.data;
+      const compact = minify(lastData);
+      outputEl.innerHTML = highlightJson(compact);
+      renderCurrentTree();
+      storeHistory(raw);
+      updateStatus(`Válido (min) | tamaño: ${compact.length} chars`);
+    }
+  });
 }
 
 formatBtn.addEventListener('click', formatCurrent);
@@ -96,7 +101,8 @@ function renderCurrentTree() {
   if (lastData === undefined) return;
   try {
     const tree = buildTree(lastData);
-    treeEl.innerHTML = renderTree(tree, { collapse });
+  treeEl.innerHTML = renderTree(tree, { collapse });
+  enhanceTreeAccessibility();
   } catch (e) {
     treeEl.textContent = 'Error al generar árbol';
   }
@@ -228,3 +234,67 @@ try {
   if (savedTheme) applyTheme(savedTheme);
 } catch {/* ignore */}
 refreshHistoryOptions();
+
+// Worker parse logic
+function ensureWorker() {
+  if (!worker) {
+    worker = new Worker(new URL('./workers/parser.worker.ts', import.meta.url), { type: 'module' });
+    worker.addEventListener('message', (ev: MessageEvent<any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const msg = ev.data;
+      if (!msg || msg.id !== pendingParseId) return;
+      pendingParseId = null;
+      if (msg.ok) {
+        parseCallback && parseCallback({ data: msg.data, metrics: msg.metrics });
+      } else {
+        parseCallback && parseCallback({ metrics: msg.error.metrics ?? { parseTimeMs: 0, depth: 0, sizeBytes: 0 }, error: msg.error });
+      }
+      parseCallback = null;
+      updateStatus('Parse completado');
+    });
+  }
+}
+
+interface SmartParseResult { data?: any; metrics: { parseTimeMs:number; depth:number; sizeBytes:number }; error?: { message:string; line:number; column:number; snippet?:string }; } // eslint-disable-line @typescript-eslint/no-explicit-any
+let parseCallback: ((r: SmartParseResult) => void) | null = null;
+function parseSmart(text: string, cb: (r: SmartParseResult) => void) {
+  // Decidir si usar worker por tamaño (bytes ~ length utf-16 aproxima)
+  if (new Blob([text]).size > WORKER_THRESHOLD) {
+    ensureWorker();
+    pendingParseId = crypto.randomUUID();
+    parseCallback = cb;
+    updateStatus('Parse (worker)…');
+    worker!.postMessage({ id: pendingParseId, json: text });
+  } else {
+    const result = parseJson(text);
+    cb(result as any); // compatible contrato
+  }
+}
+
+// Accessibility / keyboard navigation for tree
+function enhanceTreeAccessibility() {
+  const rows = Array.from(treeEl.querySelectorAll('.tw-line')) as HTMLElement[];
+  rows.forEach(r => r.setAttribute('role', 'treeitem'));
+  let focusIndex = 0;
+  if (!rows.length) return;
+  rows.forEach(r => r.tabIndex = -1);
+  rows[0].tabIndex = 0;
+  treeEl.addEventListener('keydown', (e) => {
+    if (!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Enter',' '].includes(e.key)) return;
+    e.preventDefault();
+    if (e.key === 'ArrowDown' && focusIndex < rows.length - 1) focusIndex++;
+    else if (e.key === 'ArrowUp' && focusIndex > 0) focusIndex--;
+    else if (e.key === 'ArrowRight') {
+      const toggle = rows[focusIndex].querySelector('.tw-toggle') as HTMLElement | null;
+      if (toggle && toggle.textContent === '▶') { toggle.click(); }
+    } else if (e.key === 'ArrowLeft') {
+      const toggle = rows[focusIndex].querySelector('.tw-toggle') as HTMLElement | null;
+      if (toggle && toggle.textContent === '▼') { toggle.click(); }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      const toggle = rows[focusIndex].querySelector('.tw-toggle') as HTMLElement | null;
+      if (toggle) toggle.click();
+    }
+    rows.forEach(r => r.tabIndex = -1);
+    rows[focusIndex].tabIndex = 0;
+    rows[focusIndex].focus();
+  }, { once: true });
+}
