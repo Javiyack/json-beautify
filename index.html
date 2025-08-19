@@ -125,6 +125,7 @@
           <button id="copyPrettyBtn" title="Copiar formateado"><span>Copiar Pretty</span></button>
             <button id="copyMinBtn" title="Copiar minificado"><span>Copiar Min</span></button>
           <button id="exportBtn" title="Exportar JSON"><span>Exportar</span></button>
+          <button id="scalaGenBtn" title="Generar clases Scala (Circe)"><span>Scala</span></button>
           <label class="field" title="Buscar"><span class="search-icon">🔍</span><input id="searchInput" class="search-input" placeholder="Buscar" /></label>
           <select id="historySelect" class="history-select" aria-label="Historial">
             <option value="">Historial</option>
@@ -142,6 +143,10 @@
       </div>
       </div>
       <div class="footer">Sprint 4 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>
+      <div style="padding:6px 14px;">
+        <label style="display:block;font-size:12px;margin:4px 0 4px;color:var(--muted);">Scala (ParsedJson)</label>
+        <textarea id="scalaOutput" style="width:100%;height:140px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical;background:var(--panel);color:var(--text);border:1px solid var(--panel-border);padding:8px;" placeholder="Aquí se mostrará el código Scala generado" readonly></textarea>
+      </div>
     </div>
     <div id="dragOverlay" class="drag-overlay">Suelta el archivo .json</div>
     <script type="module" src="/src/main.ts"></script>

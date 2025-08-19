@@ -4,6 +4,7 @@ import { highlightJson } from './highlight/highlight.js';
 import { buildTree } from './render/treeBuilder.js';
 import { CollapseState } from './render/collapseState.js';
 import { renderTree } from './render/treeView.js';
+import { generateScala } from './generate/scalaGen.js';
 
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLPreElement;
@@ -13,6 +14,7 @@ const minifyBtn = document.getElementById('minifyBtn') as HTMLButtonElement;
 const copyPrettyBtn = document.getElementById('copyPrettyBtn') as HTMLButtonElement | null;
 const copyMinBtn = document.getElementById('copyMinBtn') as HTMLButtonElement | null;
 const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement | null;
+const scalaGenBtn = document.getElementById('scalaGenBtn') as HTMLButtonElement | null;
 const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
 const historySelect = document.getElementById('historySelect') as HTMLSelectElement | null;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement | null;
@@ -21,6 +23,7 @@ const themeToggle = document.getElementById('themeToggle') as HTMLButtonElement 
 const treeEl = document.getElementById('tree') as HTMLDivElement;
 const tabButtons = Array.from(document.querySelectorAll('.vt-btn')) as HTMLButtonElement[];
 const dragOverlay = document.getElementById('dragOverlay') as HTMLDivElement | null;
+const scalaOutput = document.getElementById('scalaOutput') as HTMLTextAreaElement | null;
 
 const collapse = new CollapseState();
 const COLLAPSE_KEY = 'jb_collapse_v1';
@@ -195,6 +198,18 @@ exportBtn?.addEventListener('click', () => {
   a.download = 'data.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+scalaGenBtn?.addEventListener('click', () => {
+  if (lastData === undefined) { updateStatus('Nada que generar', true); return; }
+  try {
+    const code = generateScala(lastData, 'ParsedJson');
+    scalaOutput && (scalaOutput.value = code);
+    navigator.clipboard.writeText(code).catch(()=>{});
+    updateStatus('Scala generado (copiado)');
+  } catch {
+    updateStatus('Error generando Scala', true);
+  }
 });
 
 loadFileBtn?.addEventListener('click', () => fileInput?.click());
