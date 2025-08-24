@@ -99,7 +99,7 @@
       .toolbar button:hover:before { opacity:0.12; }
       .toolbar button:hover { border-color:#3e4c63; }
       .toolbar button:active { transform:translateY(1px); }
-      pre { flex:1; margin:0; overflow:auto; background:var(--panel); backdrop-filter:var(--panel-blur); padding:18px 22px; font-size:13.5px; line-height:1.5; border:1px solid var(--panel-border); border-left:none; }
+  pre { flex:1; margin:0; overflow:auto; background:var(--panel); backdrop-filter:var(--panel-blur); padding:18px 22px; font-size:13.5px; line-height:1.5; border:1px solid var(--panel-border); border-left:none; }
       pre code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight:450; }
       pre::-webkit-scrollbar { width:10px; }
       pre::-webkit-scrollbar-track { background:transparent; }
@@ -125,6 +125,17 @@
   .color-brace { color:var(--c-brace); }
   .color-punct { color:var(--c-punct); opacity:.85; }
       .color-other { color:var(--text); }
+  /* Scala highlighting (Atom One Dark inspired) */
+  .scala-shell { display:flex; flex-direction:column; min-height:0; }
+  #scalaOutput { display:none; }
+  #scalaOutputView { flex:1; margin:0; border:1px solid var(--panel-border); background:var(--panel); padding:12px 14px; overflow:auto; }
+  .lang-scala { color:#abb2bf; }
+  .sc-comment { color:#5c6370; font-style:italic; }
+  .sc-string { color:#98c379; }
+  .sc-number { color:#d19a66; }
+  .sc-keyword { color:#c678dd; }
+  .sc-type { color:#e5c07b; }
+  .sc-annotation { color:#61afef; }
   .view-tabs { display:flex; gap:6px; padding:6px 16px 4px; background:var(--panel-alt); border:1px solid var(--panel-border); border-left:none; border-top:none; }
   .vt-btn { background:transparent; border:1px solid var(--panel-border); color:var(--muted); padding:4px 12px; font-size:11px; letter-spacing:.5px; cursor:pointer; border-radius:14px; transition:.25s; }
   .vt-btn.active { color:var(--text); background:#1e2636; border-color:#364152; }
@@ -182,11 +193,12 @@
         <pre id="output" aria-label="Salida JSON" class="view-text"></pre>
         <div id="tree" class="view-tree" role="tree" aria-label="Árbol JSON" hidden></div>
       </div>
-      <div class="col col-right">
+      <div class="col col-right scala-shell">
         <div style="padding:6px 14px;">
           <label style="display:block;font-size:12px;margin:4px 0 4px;color:var(--muted);">Scala (ParsedJson)</label>
         </div>
-        <textarea id="scalaOutput" style="width:100%;height:100%;font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--panel);color:var(--text);border:1px solid var(--panel-border);padding:8px;" placeholder="Aquí se mostrará el código Scala generado" readonly></textarea>
+        <textarea id="scalaOutput" aria-hidden="true"></textarea>
+        <pre id="scalaOutputView" aria-label="Salida Scala (Atom One Dark)"></pre>
       </div>
       </div>
       <div class="footer">Sprint 4 • <a href="https://github.com/Javiyack/json-beautify" target="_blank" rel="noopener">GitHub</a></div>

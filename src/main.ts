@@ -5,6 +5,7 @@ import { buildTree } from './render/treeBuilder.js';
 import { CollapseState } from './render/collapseState.js';
 import { renderTree } from './render/treeView.js';
 import { generateScala } from './generate/scalaGen.js';
+import { highlightScala } from './highlight/scalaHighlight.js';
 
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLPreElement;
@@ -24,6 +25,7 @@ const treeEl = document.getElementById('tree') as HTMLDivElement;
 const tabButtons = Array.from(document.querySelectorAll('.vt-btn')) as HTMLButtonElement[];
 const dragOverlay = document.getElementById('dragOverlay') as HTMLDivElement | null;
 const scalaOutput = document.getElementById('scalaOutput') as HTMLTextAreaElement | null;
+const scalaOutputView = document.getElementById('scalaOutputView') as HTMLPreElement | null;
 
 const collapse = new CollapseState();
 const COLLAPSE_KEY = 'jb_collapse_v1';
@@ -54,6 +56,12 @@ function formatCurrent() {
       const formatted = pretty(lastData, { indent: 2 });
       outputEl.innerHTML = highlightJson(formatted);
       renderCurrentTree();
+      // update Scala view if data exists
+      try {
+        const code = generateScala(lastData, 'ParsedJson');
+        if (scalaOutput) scalaOutput.value = code;
+        if (scalaOutputView) scalaOutputView.innerHTML = highlightScala(code);
+      } catch {/* noop */}
       storeHistory(raw);
       updateStatus(`Válido | profundidad: ${result.metrics.depth} | tamaño: ${result.metrics.sizeBytes} bytes | parse: ${result.metrics.parseTimeMs.toFixed(1)}ms`);
     }
@@ -74,6 +82,12 @@ function minifyCurrent() {
       const compact = minify(lastData);
       outputEl.innerHTML = highlightJson(compact);
       renderCurrentTree();
+      // update Scala view if data exists
+      try {
+        const code = generateScala(lastData, 'ParsedJson');
+        if (scalaOutput) scalaOutput.value = code;
+        if (scalaOutputView) scalaOutputView.innerHTML = highlightScala(code);
+      } catch {/* noop */}
       storeHistory(raw);
       updateStatus(`Válido (min) | tamaño: ${compact.length} chars`);
     }
@@ -204,7 +218,8 @@ scalaGenBtn?.addEventListener('click', () => {
   if (lastData === undefined) { updateStatus('Nada que generar', true); return; }
   try {
     const code = generateScala(lastData, 'ParsedJson');
-    scalaOutput && (scalaOutput.value = code);
+    if (scalaOutput) scalaOutput.value = code; // keep raw for copy if needed
+    if (scalaOutputView) scalaOutputView.innerHTML = highlightScala(code);
     navigator.clipboard.writeText(code).catch(()=>{});
     updateStatus('Scala generado (copiado)');
   } catch {
